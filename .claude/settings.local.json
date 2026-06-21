@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\domin\\\\OneDrive\\\\Desktop\\\\NOCTIS_LANDINGPAGE_FINAL\\\\NOCTIS_Landingpage_VSCode.html\" -Raw; $content.Substring\\(0, [Math]::Min\\(500, $content.Length\\)\\) | Write-Output; Write-Host \"---\"; $lines = $content -split \"`n\"; Write-Host \"Total lines: $\\($lines.Count\\)\"; Write-Host \"Line 140 start \\(first 200 chars\\):\"; $lines[139].Substring\\(0, [Math]::Min\\(200, $lines[139].Length\\)\\))",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

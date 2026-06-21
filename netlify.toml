@@ -1,0 +1,19 @@
+[build]
+  command   = "npm install"
+  functions = "netlify/functions"
+  publish   = "."
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from   = "/confirm"
+  to     = "/.netlify/functions/confirm"
+  status = 200
+
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin  = "https://noctis-racing.com"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"

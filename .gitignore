@@ -1,0 +1,7 @@
+node_modules/
+.netlify/
+NOCTIS_Landingpage_VSCode.html
+extracted_template.html
+NOCTIS_WEBSHOP/
+patch_generator.js
+*.log

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\domin\\\\OneDrive\\\\Desktop\\\\NOCTIS_LANDINGPAGE_FINAL\\\\NOCTIS_Landingpage_VSCode.html\" -Raw -Encoding UTF8; $lines = $content -split \"`n\"; $templateLine = $lines[177].Trim\\(\\); Add-Type -AssemblyName System.Web; $decoded = [System.Web.HttpUtility]::JavaScriptStringDecode\\($templateLine.Trim\\('\"'\\)\\); Write-Host \"Length: $\\($decoded.Length\\)\"; $decoded.Substring\\(0, [Math]::Min\\(500, $decoded.Length\\)\\))",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\domin\\\\OneDrive\\\\Desktop\\\\NOCTIS_LANDINGPAGE_FINAL\\\\NOCTIS_Landingpage_VSCode.html\" -Raw -Encoding UTF8; $lines = $content -split \"`n\"; $templateLine = $lines[177].Trim\\(\\); # Parse as JSON string using ConvertFrom-Json $decoded = $templateLine | ConvertFrom-Json; Write-Host \"Length: $\\($decoded.Length\\)\"; $decoded.Substring\\(0, [Math]::Min\\(1000, $decoded.Length\\)\\))",
+      "Bash(node -e ' *)"
+    ]
+  }
+}
