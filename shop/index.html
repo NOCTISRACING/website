@@ -1498,8 +1498,8 @@ function LayerLine({ line, font, fontPx, fillCss, isLight, strokeCss }) {
   const display = line.trim() || '—';
   const isEmpty = !line.trim();
   const isGrad = fillCss.startsWith('linear');
-  // 0.3-0.5cm Materialrand simuliert: sichtbarer Außenrand = strokePx / 2
-  const strokePx = strokeCss ? Math.max(18, Math.round(fontPx * 0.26)) : 0;
+  // 0.5cm Materialrand: sichtbarer Außenrand = strokePx / 2
+  const strokePx = strokeCss ? Math.max(20, Math.round(fontPx * 0.36)) : 0;
   const baseStyle = { whiteSpace: 'nowrap', display: 'inline-block', lineHeight: 1.1 };
   const colorStyle = {
     background: isGrad && !strokeCss ? fillCss : undefined,
