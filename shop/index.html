@@ -1479,7 +1479,7 @@ Object.assign(window, {
    ============================================================ */
 const { useState, useRef, useMemo } = React;
 
-function LayerLine({ line, font, fontPx, fillCss, isLight, strokeCss }) {
+function LayerLine({ line, font, fontPx, fillCss, isLight, hideEmpty }) {
   const wrapRef = React.useRef(null);
   const measureRef = React.useRef(null);
   const [fs, setFs] = React.useState(fontPx);
@@ -1495,22 +1495,17 @@ function LayerLine({ line, font, fontPx, fillCss, isLight, strokeCss }) {
     }
   }, [line, font, fontPx]);
 
-  const display = line.trim() || '—';
   const isEmpty = !line.trim();
+  if (hideEmpty && isEmpty) return null;
+  const display = line.trim() || '—';
   const isGrad = fillCss.startsWith('linear');
-  // 0.3cm Materialrand: sichtbarer Außenrand = strokePx / 2
-  const strokePx = strokeCss ? Math.max(14, Math.round(fontPx * 0.22)) : 0;
   const baseStyle = { whiteSpace: 'nowrap', display: 'inline-block', lineHeight: 1.1 };
   const colorStyle = {
-    background: isGrad && !strokeCss ? fillCss : undefined,
-    WebkitBackgroundClip: isGrad && !strokeCss ? 'text' : undefined,
-    WebkitTextFillColor: strokeCss
-      ? (isEmpty ? 'rgba(255,255,255,0.3)' : fillCss)
-      : (isGrad ? 'transparent' : undefined),
-    color: (isGrad && !strokeCss) ? undefined : (isEmpty ? 'rgba(255,255,255,0.18)' : fillCss),
-    WebkitTextStroke: strokeCss ? `${strokePx}px ${strokeCss}` : undefined,
-    paintOrder: strokeCss ? 'stroke fill' : undefined,
-    textShadow: strokeCss ? 'none' : (isLight && !isEmpty ? '0 0 30px rgba(124,58,237,0.35)' : 'none'),
+    background: isGrad ? fillCss : undefined,
+    WebkitBackgroundClip: isGrad ? 'text' : undefined,
+    WebkitTextFillColor: isGrad ? 'transparent' : undefined,
+    color: isGrad ? undefined : (isEmpty ? 'rgba(255,255,255,0.18)' : fillCss),
+    textShadow: isLight && !isEmpty ? '0 0 30px rgba(124,58,237,0.35)' : 'none',
     opacity: isEmpty ? 0.35 : 1,
   };
 
@@ -1755,11 +1750,28 @@ function Generator({ onAdd, toast }) {
               <span className="live">Live-Vorschau</span>
             </div>
             <div className="preview-stage" ref={stageRef} style={{ background: stageBg }}>
+              {/* SVG-Filter für Konturschnitt: feMorphology diliert Alpha-Channel artefaktfrei */}
+              {cutType === "kontur" && (() => {
+                const r = Math.max(4, Math.round(90 / widthCm));
+                return (
+                  <svg aria-hidden="true" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
+                    <defs>
+                      <filter id="noctis-kontur" x="-30%" y="-30%" width="160%" height="160%">
+                        <feMorphology in="SourceAlpha" result="EXP" operator="dilate" radius={r} />
+                        <feFlood floodColor={bgCss} floodOpacity="1" result="FILL" />
+                        <feComposite in="FILL" in2="EXP" operator="in" result="BORDER" />
+                        <feComposite in="SourceGraphic" in2="BORDER" operator="over" />
+                      </filter>
+                    </defs>
+                  </svg>
+                );
+              })()}
               <div key={pulse} className={"sticker mat-matt" + (pulse ? " gen-pulse" : "")}
                 style={{ "--sk": bgCss,
                   background: isFreecut ? "transparent" : bgCss,
                   boxShadow: (isFreecut || cutType === "kontur") ? "none" : "0 20px 52px -18px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.07)",
                   transform: "none", display: "flex",
+                  filter: cutType === "kontur" ? "url(#noctis-kontur)" : undefined,
                   width: "calc(100% - 64px)", maxWidth: "300px",
                   transition: "border-radius .3s, background .3s, box-shadow .3s, padding .25s",
                   ...cutShape }}>
@@ -1774,7 +1786,7 @@ function Generator({ onAdd, toast }) {
                   {textLines.slice(0, layerCount).map((line, i) => (
                     <LayerLine key={i} line={line} font={font} fontPx={fontPx}
                       fillCss={fillCss} isLight={isLight}
-                      strokeCss={cutType === "kontur" ? bgCss : undefined} />
+                      hideEmpty={cutType === "kontur"} />
                   ))}
                 </div>
               </div>
