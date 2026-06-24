@@ -1373,11 +1373,19 @@ const SHOP_SIZES = [
   { cm: 25, price: 24.99 },
 ];
 const CUT_TYPES = [
-  { id: "rechteck",   label: "Rechteckig",      desc: "Klassischer gerader Schnitt" },
-  { id: "rund-ecken", label: "Abger. Ecken",    desc: "Cleaner, hochwertiger" },
-  { id: "kreis",      label: "Rund / Kreis",    desc: "Wird als Kreis geschnitten" },
-  { id: "oval",       label: "Oval",            desc: "Softer als Kreis" },
-  { id: "kontur",     label: "Konturschnitt",   desc: "Exakt entlang des Motivs" },
+  { id: "rechteck",    label: "Rechteckig",     desc: "Klassischer gerader Schnitt" },
+  { id: "rund-ecken",  label: "Abger. Ecken",   desc: "Cleaner, hochwertiger" },
+  { id: "kreis",       label: "Rund / Kreis",   desc: "Wird als Kreis geschnitten" },
+  { id: "oval",        label: "Oval",           desc: "Softer als Kreis" },
+  { id: "kontur",      label: "Konturschnitt",  desc: "Exakt entlang des Motivs" },
+  { id: "freischnitt", label: "Freischnitt",    desc: "Nur das Motiv, kein Hintergrund" },
+];
+const BG_COLORS = [
+  { id: "schwarz", label: "Schwarz", css: "#0d0b12" },
+  { id: "weiss",   label: "Weiß",   css: "#f3f1f7" },
+  { id: "lila",    label: "Lila",   css: "#4c1d95" },
+  { id: "carbon",  label: "Carbon", css: "#1a1821" },
+  { id: "silber",  label: "Silber", css: "#b0aec0" },
 ];
 
 /* ---------- Sticker-Kategorien ---------- */
@@ -1521,6 +1529,7 @@ function CutIcon({ id }) {
   if (id === "kreis")      return React.createElement("svg", { viewBox:"0 0 32 24", width:32, height:24 }, React.createElement("ellipse", { cx:16, cy:12, rx:9, ry:9, ...s }));
   if (id === "oval")       return React.createElement("svg", { viewBox:"0 0 32 24", width:32, height:24 }, React.createElement("ellipse", { cx:16, cy:12, rx:13, ry:9, ...s }));
   if (id === "kontur")     return React.createElement("svg", { viewBox:"0 0 32 24", width:32, height:24 }, React.createElement("path", { d:"M16 3 L27 10 L23 21 L9 21 L5 10 Z", ...s, strokeDasharray:"2 1.5" }));
+  if (id === "freischnitt") return React.createElement("svg", { viewBox:"0 0 32 24", width:32, height:24 }, React.createElement("text", { x:16, y:19, textAnchor:"middle", fontSize:17, fontWeight:"900", fill:"none", stroke:"currentColor", strokeWidth:1, fontFamily:"Arial,sans-serif" }, "A"));
   return null;
 }
 
@@ -1532,6 +1541,9 @@ function Generator({ onAdd, toast }) {
   const [colorId, setColorId] = useState("weiss");
   const [custom, setCustom]   = useState("#9b6bff");
   const [customOn, setCustomOn] = useState(false);
+  const [bgColorId, setBgColorId]   = useState("schwarz");
+  const [bgCustom, setBgCustom]     = useState("#1a1821");
+  const [bgCustomOn, setBgCustomOn] = useState(false);
   const [widthCm, setWidthCm]   = useState(10);
   const [heightCm, setHeightCm] = useState(10);
   const [cutType, setCutType]   = useState("rechteck");
@@ -1542,13 +1554,17 @@ function Generator({ onAdd, toast }) {
   const colorObj = SHOP_COLORS.find(c => c.id === colorId);
   const price = Math.ceil((4.99 + widthCm * heightCm * 0.075) * 2) / 2;
 
-  // aktive Farbe + Helligkeit
+  // Textfarbe
   const isLight = customOn ? hexLuma(custom) > 0.55 : colorObj.light;
   const fillCss = customOn ? custom : colorObj.css;
   const solid   = customOn ? custom : (colorObj.solid || colorObj.css);
 
-  // Preview-Hintergrund passt sich an: dunkle Schrift → graphit, helle Schrift → dunkel
-  const stageBg = isLight ? "#0a0810" : "#211e2a";
+  // Hintergrundfarbe
+  const bgObj  = BG_COLORS.find(c => c.id === bgColorId);
+  const bgCss  = bgCustomOn ? bgCustom : (bgObj?.css ?? "#0d0b12");
+  const isFreecut = cutType === "freischnitt";
+
+  const stageBg = "#06050e";
 
   // Skalierung nach Breite
   const fontPx = Math.max(16, Math.min(100, widthCm * 4.5));
@@ -1629,9 +1645,9 @@ function Generator({ onAdd, toast }) {
               </div>
             </div>
 
-            {/* C) Farbe */}
+            {/* C) Schriftfarbe */}
             <div className="field">
-              <label>Farbe</label>
+              <label>Schriftfarbe</label>
               <div className="swatch-row">
                 {SHOP_COLORS.map(c => (
                   <div key={c.id} className={"swatch-item" + (!customOn && colorId === c.id ? " active" : "")}
@@ -1651,6 +1667,31 @@ function Generator({ onAdd, toast }) {
                 </div>
               </div>
             </div>
+
+            {/* C2) Hintergrundfarbe */}
+            {!isFreecut && (
+              <div className="field">
+                <label>Hintergrund</label>
+                <div className="swatch-row">
+                  {BG_COLORS.map(c => (
+                    <div key={c.id} className={"swatch-item" + (!bgCustomOn && bgColorId === c.id ? " active" : "")}
+                      onClick={() => { setBgColorId(c.id); setBgCustomOn(false); }}>
+                      <div className={"swatch" + (!bgCustomOn && bgColorId === c.id ? " active" : "")}
+                        style={{ background: c.css }} />
+                      <span className="lab">{c.label}</span>
+                    </div>
+                  ))}
+                  <div className={"swatch-item" + (bgCustomOn ? " active" : "")}>
+                    <label className={"swatch-custom" + (bgCustomOn ? " active" : "")} style={{ background: bgCustomOn ? bgCustom : undefined }}>
+                      <input type="color" value={bgCustom}
+                        onChange={e => { setBgCustom(e.target.value); setBgCustomOn(true); }}
+                        onClick={() => setBgCustomOn(true)} />
+                    </label>
+                    <span className="lab">Custom</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* optional: eigenes Motiv */}
             <div className="field upload-mini">
@@ -1706,7 +1747,7 @@ function Generator({ onAdd, toast }) {
             </div>
             <div className="preview-stage" ref={stageRef} style={{ background: stageBg }}>
               <div key={pulse} className={"sticker mat-matt" + (pulse ? " gen-pulse" : "")}
-                style={{ "--sk": "rgba(124,58,237,0.10)", background: "transparent", boxShadow: "none", padding: "38px 32px", transition: "border-radius .3s, filter .3s, aspect-ratio .3s", ...cutShape }}>
+                style={{ "--sk": bgCss, background: isFreecut ? "transparent" : bgCss, boxShadow: isFreecut ? "none" : "0 20px 50px -16px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.07)", padding: "38px 32px", transform: "none", width: "min(85%, 360px)", maxWidth: "360px", transition: "border-radius .3s, background .3s, box-shadow .3s", ...cutShape }}>
                 {img && (
                   <div style={{ width: fontPx * 2.4, height: fontPx * 2.4, marginBottom: 14,
                     borderRadius: 18, overflow: "hidden", border: "1px solid var(--border-2)" }}>
@@ -1725,7 +1766,8 @@ function Generator({ onAdd, toast }) {
             <div className="spec-row">
               <span className="spec">Größe <b>{widthCm}×{heightCm} cm</b></span>
               <span className="spec">Schnitt <b>{CUT_TYPES.find(c=>c.id===cutType).label}</b></span>
-              <span className="spec">Farbe <b>{customOn ? "Custom" : colorObj.label}</b></span>
+              <span className="spec">Schriftfarbe <b>{customOn ? "Custom" : colorObj.label}</b></span>
+              {!isFreecut && <span className="spec">Hintergrund <b>{bgCustomOn ? "Custom" : bgObj?.label}</b></span>}
               <span className="spec">Schrift <b>{SHOP_FONTS.find(f=>f.id===font).label}</b></span>
               <span className="spec">Finish <b>Premium-Vinyl</b></span>
             </div>
