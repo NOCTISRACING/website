@@ -1498,7 +1498,8 @@ function LayerLine({ line, font, fontPx, fillCss, isLight, strokeCss }) {
   const display = line.trim() || '—';
   const isEmpty = !line.trim();
   const isGrad = fillCss.startsWith('linear');
-  const strokePx = strokeCss ? Math.max(10, Math.round(fontPx * 0.15)) : 0;
+  // 0.3-0.5cm Materialrand simuliert: sichtbarer Außenrand = strokePx / 2
+  const strokePx = strokeCss ? Math.max(18, Math.round(fontPx * 0.26)) : 0;
   const baseStyle = { whiteSpace: 'nowrap', display: 'inline-block', lineHeight: 1.1 };
   const colorStyle = {
     background: isGrad && !strokeCss ? fillCss : undefined,
@@ -1509,9 +1510,7 @@ function LayerLine({ line, font, fontPx, fillCss, isLight, strokeCss }) {
     color: (isGrad && !strokeCss) ? undefined : (isEmpty ? 'rgba(255,255,255,0.18)' : fillCss),
     WebkitTextStroke: strokeCss ? `${strokePx}px ${strokeCss}` : undefined,
     paintOrder: strokeCss ? 'stroke fill' : undefined,
-    textShadow: strokeCss
-      ? `0 0 ${strokePx * 2}px ${strokeCss}`
-      : (isLight && !isEmpty ? '0 0 30px rgba(124,58,237,0.35)' : 'none'),
+    textShadow: strokeCss ? 'none' : (isLight && !isEmpty ? '0 0 30px rgba(124,58,237,0.35)' : 'none'),
     opacity: isEmpty ? 0.35 : 1,
   };
 
