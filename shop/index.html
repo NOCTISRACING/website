@@ -1043,6 +1043,24 @@ body.shop {
 .size-chip:hover { border-color: var(--border-2); }
 .size-chip.active { border-color: var(--accent); background: rgba(124,58,237,0.08); box-shadow: 0 0 0 3px var(--accent-glow-soft); }
 .size-chip.active .pr { color: var(--accent-bright); }
+/* Generator: Schnittart + Ebenen-Stepper + Dimensions */
+.cut-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+@media (max-width: 480px) { .cut-grid { grid-template-columns: repeat(2, 1fr); } }
+.cut-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border-radius: var(--radius-sm); cursor: pointer; background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); transition: background .2s, border-color .2s, color .2s; text-align: center; width: 100%; }
+.cut-btn:hover { border-color: var(--border-2); color: var(--text); }
+.cut-btn.active { border-color: var(--accent); background: rgba(124,58,237,0.08); color: var(--text); box-shadow: 0 0 0 2px var(--accent-glow-soft); }
+.cut-icon { width: 32px; height: 24px; display: flex; align-items: center; justify-content: center; color: currentColor; }
+.cut-label { font-family: var(--font-head); font-weight: 700; font-size: 10.5px; line-height: 1.2; }
+.cut-desc { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); line-height: 1.4; }
+.layer-stepper { display: flex; align-items: center; gap: 16px; }
+.layer-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--surface-2); border: 1px solid var(--border-2); cursor: pointer; color: var(--text); font-size: 18px; line-height: 1; transition: all .2s; padding: 0; }
+.layer-btn:hover:not(:disabled) { border-color: var(--accent); background: rgba(124,58,237,0.1); }
+.layer-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.layer-count-display { font-family: var(--font-display); font-size: 22px; color: var(--text); min-width: 28px; text-align: center; }
+.dim-row { display: flex; flex-direction: column; gap: 12px; }
+.dim-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.dim-label span { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); }
+.dim-label b { font-family: var(--font-mono); font-size: 13px; color: var(--accent-bright); }
 
 /* Live-Sticker font-styles */
 .sticker-text.f-clean   { font-family: var(--font-head); font-weight: 600; letter-spacing: .01em; }
@@ -1354,6 +1372,13 @@ const SHOP_SIZES = [
   { cm: 20, price: 19.99 },
   { cm: 25, price: 24.99 },
 ];
+const CUT_TYPES = [
+  { id: "rechteck",   label: "Rechteckig",      desc: "Klassischer gerader Schnitt" },
+  { id: "rund-ecken", label: "Abger. Ecken",    desc: "Cleaner, hochwertiger" },
+  { id: "kreis",      label: "Rund / Kreis",    desc: "Wird als Kreis geschnitten" },
+  { id: "oval",       label: "Oval",            desc: "Softer als Kreis" },
+  { id: "kontur",     label: "Konturschnitt",   desc: "Exakt entlang des Motivs" },
+];
 
 /* ---------- Sticker-Kategorien ---------- */
 const HELMET_STICKERS = [
@@ -1489,21 +1514,33 @@ function LayerLine({ line, font, fontPx, fillCss, isLight }) {
   );
 }
 
+function CutIcon({ id }) {
+  const s = { stroke: "currentColor", strokeWidth: 1.5, fill: "none" };
+  if (id === "rechteck")   return React.createElement("svg", { viewBox:"0 0 32 24", width:32, height:24 }, React.createElement("rect", { x:3, y:3, width:26, height:18, rx:0, ...s }));
+  if (id === "rund-ecken") return React.createElement("svg", { viewBox:"0 0 32 24", width:32, height:24 }, React.createElement("rect", { x:3, y:3, width:26, height:18, rx:5, ...s }));
+  if (id === "kreis")      return React.createElement("svg", { viewBox:"0 0 32 24", width:32, height:24 }, React.createElement("ellipse", { cx:16, cy:12, rx:9, ry:9, ...s }));
+  if (id === "oval")       return React.createElement("svg", { viewBox:"0 0 32 24", width:32, height:24 }, React.createElement("ellipse", { cx:16, cy:12, rx:13, ry:9, ...s }));
+  if (id === "kontur")     return React.createElement("svg", { viewBox:"0 0 32 24", width:32, height:24 }, React.createElement("path", { d:"M16 3 L27 10 L23 21 L9 21 L5 10 Z", ...s, strokeDasharray:"2 1.5" }));
+  return null;
+}
+
 function Generator({ onAdd, toast }) {
   const [layerCount, setLayerCount] = useState(1);
-  const [textLines, setTextLines]   = useState(["NOCTIS", "", ""]);
+  const [textLines, setTextLines]   = useState(["NOCTIS", "", "", "", "", "", "", ""]);
   const stageRef = useRef(null);
   const [font, setFont]   = useState("f-bold");
   const [colorId, setColorId] = useState("weiss");
   const [custom, setCustom]   = useState("#9b6bff");
   const [customOn, setCustomOn] = useState(false);
-  const [sizeIdx, setSizeIdx] = useState(1);
+  const [widthCm, setWidthCm]   = useState(10);
+  const [heightCm, setHeightCm] = useState(10);
+  const [cutType, setCutType]   = useState("rechteck");
   const [img, setImg] = useState(null);
   const [pulse, setPulse] = useState(0);
   const fileRef = useRef(null);
 
-  const size  = SHOP_SIZES[sizeIdx];
   const colorObj = SHOP_COLORS.find(c => c.id === colorId);
+  const price = Math.ceil((4.99 + widthCm * heightCm * 0.075) * 2) / 2;
 
   // aktive Farbe + Helligkeit
   const isLight = customOn ? hexLuma(custom) > 0.55 : colorObj.light;
@@ -1513,11 +1550,20 @@ function Generator({ onAdd, toast }) {
   // Preview-Hintergrund passt sich an: dunkle Schrift → graphit, helle Schrift → dunkel
   const stageBg = isLight ? "#0a0810" : "#211e2a";
 
-  // Skalierung nach cm
-  const fontPx = 30 + (size.cm - 10) * 3.4; // 10→30 … 25→81
+  // Skalierung nach Breite
+  const fontPx = Math.max(16, Math.min(100, widthCm * 4.5));
+
+  // Schnittart → Preview-Shape
+  const cutShape = ({
+    "rechteck":   { borderRadius: 4 },
+    "rund-ecken": { borderRadius: "16%" },
+    "kreis":      { borderRadius: "50%", aspectRatio: "1" },
+    "oval":       { borderRadius: "50% / 36%" },
+    "kontur":     { borderRadius: 4, filter: "drop-shadow(0 0 10px rgba(155,107,255,0.55))" },
+  })[cutType] || {};
 
   const firePulse = () => setPulse(p => p + 1);
-  const setLine = (i, val) => setTextLines(prev => { const n = [...prev]; n[i] = val.slice(0, 20); return n; });
+  const setLine = (i, val) => setTextLines(prev => { const n = [...prev]; n[i] = val; return n; });
 
   const onFile = (e) => {
     const f = e.target.files?.[0];
@@ -1531,8 +1577,8 @@ function Generator({ onAdd, toast }) {
     onAdd({
       id: "custom-" + Date.now(),
       name: (() => { const l = textLines.slice(0, layerCount).filter(s => s.trim()).join(" · "); return l ? `Custom: „${l}"` : "Custom Sticker"; })(),
-      meta: `${size.cm} cm · ${customOn ? "Custom" : colorObj.label} · ${SHOP_FONTS.find(f=>f.id===font).label}`,
-      price: size.price,
+      meta: `${widthCm}×${heightCm} cm · ${customOn ? "Custom" : colorObj.label} · ${CUT_TYPES.find(c=>c.id===cutType).label}`,
+      price,
       img,
     });
     toast("In den Warenkorb gelegt");
@@ -1555,23 +1601,20 @@ function Generator({ onAdd, toast }) {
           <div className="gen-panel glass">
             {/* A) Ebenen */}
             <div className="field">
-              <label>Ebenen</label>
-              <div className="chips">
-                {[1, 2, 3].map(n => (
-                  <button key={n} className={"chip" + (layerCount === n ? " active" : "")}
-                    onClick={() => setLayerCount(n)}>
-                    {n} {n === 1 ? "Ebene" : "Ebenen"}
-                  </button>
-                ))}
+              <label>Ebenen <span style={{color:"var(--text-faint)",fontFamily:"var(--font-mono)",fontSize:11,fontWeight:400}}>({layerCount} von max. 8)</span></label>
+              <div className="layer-stepper">
+                <button className="layer-btn" disabled={layerCount <= 1} onClick={() => setLayerCount(c => Math.max(1, c - 1))}>−</button>
+                <span className="layer-count-display">{layerCount}</span>
+                <button className="layer-btn" disabled={layerCount >= 8} onClick={() => setLayerCount(c => Math.min(8, c + 1))}>+</button>
               </div>
             </div>
             {/* A2) Textfelder je Ebene */}
             {Array.from({ length: layerCount }, (_, i) => (
               <div className="field" key={"ln" + i}>
                 <label>Ebene {i + 1}</label>
-                <input className="input" value={textLines[i]} maxLength={20}
+                <input className="input" value={textLines[i]}
                   onChange={e => setLine(i, e.target.value)}
-                  placeholder={["YOU.", "VS", "YOU"][i]} />
+                  placeholder={["YOU.", "VS", "YOU.", "2024", "NOCTIS", "RACING", "DARK", "DESIGN"][i] || ""} />
               </div>
             ))}
 
@@ -1619,23 +1662,39 @@ function Generator({ onAdd, toast }) {
               </div>
             </div>
 
-            {/* D) Größe + Preis */}
+            {/* D) Schnittart */}
             <div className="field">
-              <label>Größe</label>
-              <div className="size-chips">
-                {SHOP_SIZES.map((s, i) => (
-                  <button key={s.cm} className={"size-chip" + (sizeIdx === i ? " active" : "")}
-                    onClick={() => setSizeIdx(i)}>
-                    <span className="sz">{s.cm}</span>
-                    <span className="pr">{eur(s.price)}</span>
+              <label>Schnittart</label>
+              <div className="cut-grid">
+                {CUT_TYPES.map(ct => (
+                  <button key={ct.id} className={"cut-btn" + (cutType === ct.id ? " active" : "")}
+                    onClick={() => setCutType(ct.id)}>
+                    <div className="cut-icon"><CutIcon id={ct.id} /></div>
+                    <span className="cut-label">{ct.label}</span>
+                    <span className="cut-desc">{ct.desc}</span>
                   </button>
                 ))}
               </div>
             </div>
 
+            {/* E) Größe via Slider */}
+            <div className="field">
+              <label>Größe <span style={{color:"var(--text-faint)",fontFamily:"var(--font-mono)",fontSize:10,fontWeight:400,letterSpacing:".04em"}}>max. 21 × 29,7 cm (DIN A4)</span></label>
+              <div className="dim-row">
+                <div>
+                  <div className="dim-label"><span>Breite</span><b>{widthCm} cm</b></div>
+                  <div className="size-row"><input type="range" min={3} max={21} step={0.5} value={widthCm} onChange={e => { setWidthCm(+e.target.value); firePulse(); }} /></div>
+                </div>
+                <div>
+                  <div className="dim-label"><span>Höhe</span><b>{heightCm} cm</b></div>
+                  <div className="size-row"><input type="range" min={3} max={29.7} step={0.5} value={heightCm} onChange={e => { setHeightCm(+e.target.value); firePulse(); }} /></div>
+                </div>
+              </div>
+            </div>
+
             <div className="gen-price">
               <span className="lbl">Aktueller Preis</span>
-              <span className="val">{eur(size.price)} <small>/ {size.cm} cm</small></span>
+              <span className="val">{eur(price)} <small>/ {widthCm}×{heightCm} cm</small></span>
             </div>
           </div>
 
@@ -1647,7 +1706,7 @@ function Generator({ onAdd, toast }) {
             </div>
             <div className="preview-stage" ref={stageRef} style={{ background: stageBg }}>
               <div key={pulse} className={"sticker mat-matt" + (pulse ? " gen-pulse" : "")}
-                style={{ "--sk": "rgba(124,58,237,0.10)", background: "transparent", boxShadow: "none", padding: "38px 32px" }}>
+                style={{ "--sk": "rgba(124,58,237,0.10)", background: "transparent", boxShadow: "none", padding: "38px 32px", transition: "border-radius .3s, filter .3s, aspect-ratio .3s", ...cutShape }}>
                 {img && (
                   <div style={{ width: fontPx * 2.4, height: fontPx * 2.4, marginBottom: 14,
                     borderRadius: 18, overflow: "hidden", border: "1px solid var(--border-2)" }}>
@@ -1664,7 +1723,8 @@ function Generator({ onAdd, toast }) {
               </div>
             </div>
             <div className="spec-row">
-              <span className="spec">Größe <b>{size.cm} cm</b></span>
+              <span className="spec">Größe <b>{widthCm}×{heightCm} cm</b></span>
+              <span className="spec">Schnitt <b>{CUT_TYPES.find(c=>c.id===cutType).label}</b></span>
               <span className="spec">Farbe <b>{customOn ? "Custom" : colorObj.label}</b></span>
               <span className="spec">Schrift <b>{SHOP_FONTS.find(f=>f.id===font).label}</b></span>
               <span className="spec">Finish <b>Premium-Vinyl</b></span>
