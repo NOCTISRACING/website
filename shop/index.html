@@ -714,13 +714,13 @@ body {
 .preview-stage {
   flex: 1; min-height: 420px; position: relative;
   display: grid; place-items: center;
+  padding: 28px;
   background:
     radial-gradient(600px 300px at 50% 30%, rgba(124,58,237,0.12), transparent 70%),
     repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 26px),
     repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 26px),
     #0a0810;
-  perspective: 900px;
-  overflow: hidden;
+  overflow: visible;
 }
 .preview-toolbar {
   display: flex; align-items: center; justify-content: space-between;
@@ -1566,17 +1566,21 @@ function Generator({ onAdd, toast }) {
 
   const stageBg = "#06050e";
 
-  // Skalierung nach Breite
-  const fontPx = Math.max(16, Math.min(100, widthCm * 4.5));
+  // Schriftgröße angepasst an Schnittform — unabhängig von cm (Preview-Skala)
+  // LayerLine skaliert bei langen Texten automatisch herunter
+  const fontPx = { "kreis": 56, "oval": 64 }[cutType] ?? 84;
 
-  // Schnittart → Preview-Shape
+  // Schnittart → Preview-Shape + Padding pro Form
   const cutShape = ({
-    "rechteck":   { borderRadius: 4 },
-    "rund-ecken": { borderRadius: "16%" },
-    "kreis":      { borderRadius: "50%", aspectRatio: "1" },
-    "oval":       { borderRadius: "50% / 36%" },
-    "kontur":     { borderRadius: 4, filter: "drop-shadow(0 0 10px rgba(155,107,255,0.55))" },
-  })[cutType] || {};
+    "rechteck":    { borderRadius: 4,     padding: "34px 40px" },
+    "rund-ecken":  { borderRadius: "20%", padding: "34px 40px" },
+    "kreis":       { borderRadius: "50%", aspectRatio: "1", padding: "34px 40px" },
+    "oval":        { borderRadius: "50% / 38%", padding: "26px 40px" },
+    "kontur":      { borderRadius: "10px", padding: "10px 16px",
+                     outline: "1.5px dashed rgba(155,107,255,0.7)",
+                     outlineOffset: "6px" },
+    "freischnitt": { padding: "34px 40px" },
+  })[cutType] || { padding: "34px 40px" };
 
   const firePulse = () => setPulse(p => p + 1);
   const setLine = (i, val) => setTextLines(prev => { const n = [...prev]; n[i] = val; return n; });
@@ -1747,7 +1751,13 @@ function Generator({ onAdd, toast }) {
             </div>
             <div className="preview-stage" ref={stageRef} style={{ background: stageBg }}>
               <div key={pulse} className={"sticker mat-matt" + (pulse ? " gen-pulse" : "")}
-                style={{ "--sk": bgCss, background: isFreecut ? "transparent" : bgCss, boxShadow: isFreecut ? "none" : "0 20px 50px -16px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.07)", padding: "38px 32px", transform: "none", width: "min(85%, 360px)", maxWidth: "360px", transition: "border-radius .3s, background .3s, box-shadow .3s", ...cutShape }}>
+                style={{ "--sk": bgCss,
+                  background: isFreecut ? "transparent" : bgCss,
+                  boxShadow: (isFreecut || cutType === "kontur") ? "none" : "0 20px 52px -18px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.07)",
+                  transform: "none", display: "flex",
+                  width: "calc(100% - 64px)", maxWidth: "300px",
+                  transition: "border-radius .3s, background .3s, box-shadow .3s, padding .25s",
+                  ...cutShape }}>
                 {img && (
                   <div style={{ width: fontPx * 2.4, height: fontPx * 2.4, marginBottom: 14,
                     borderRadius: 18, overflow: "hidden", border: "1px solid var(--border-2)" }}>
