@@ -1479,7 +1479,7 @@ Object.assign(window, {
    ============================================================ */
 const { useState, useRef, useMemo } = React;
 
-function LayerLine({ line, font, fontPx, fillCss, isLight }) {
+function LayerLine({ line, font, fontPx, fillCss, isLight, strokeCss }) {
   const wrapRef = React.useRef(null);
   const measureRef = React.useRef(null);
   const [fs, setFs] = React.useState(fontPx);
@@ -1498,13 +1498,20 @@ function LayerLine({ line, font, fontPx, fillCss, isLight }) {
   const display = line.trim() || '—';
   const isEmpty = !line.trim();
   const isGrad = fillCss.startsWith('linear');
-  const baseStyle = { whiteSpace: 'nowrap', display: 'inline-block', lineHeight: 1.05 };
+  const strokePx = strokeCss ? Math.max(10, Math.round(fontPx * 0.15)) : 0;
+  const baseStyle = { whiteSpace: 'nowrap', display: 'inline-block', lineHeight: 1.1 };
   const colorStyle = {
-    background: isGrad ? fillCss : undefined,
-    WebkitBackgroundClip: isGrad ? 'text' : undefined,
-    WebkitTextFillColor: isGrad ? 'transparent' : undefined,
-    color: isGrad ? undefined : (isEmpty ? 'rgba(255,255,255,0.18)' : fillCss),
-    textShadow: isLight && !isEmpty ? '0 0 30px rgba(124,58,237,0.35)' : 'none',
+    background: isGrad && !strokeCss ? fillCss : undefined,
+    WebkitBackgroundClip: isGrad && !strokeCss ? 'text' : undefined,
+    WebkitTextFillColor: strokeCss
+      ? (isEmpty ? 'rgba(255,255,255,0.3)' : fillCss)
+      : (isGrad ? 'transparent' : undefined),
+    color: (isGrad && !strokeCss) ? undefined : (isEmpty ? 'rgba(255,255,255,0.18)' : fillCss),
+    WebkitTextStroke: strokeCss ? `${strokePx}px ${strokeCss}` : undefined,
+    paintOrder: strokeCss ? 'stroke fill' : undefined,
+    textShadow: strokeCss
+      ? `0 0 ${strokePx * 2}px ${strokeCss}`
+      : (isLight && !isEmpty ? '0 0 30px rgba(124,58,237,0.35)' : 'none'),
     opacity: isEmpty ? 0.35 : 1,
   };
 
@@ -1576,9 +1583,8 @@ function Generator({ onAdd, toast }) {
     "rund-ecken":  { borderRadius: "20%", padding: "34px 40px" },
     "kreis":       { borderRadius: "50%", aspectRatio: "1", padding: "34px 40px" },
     "oval":        { borderRadius: "50% / 38%", padding: "26px 40px" },
-    "kontur":      { borderRadius: "10px", padding: "10px 16px",
-                     outline: "1.5px dashed rgba(155,107,255,0.7)",
-                     outlineOffset: "6px" },
+    "kontur":      { borderRadius: 0, padding: "20px 28px",
+                     background: "transparent", boxShadow: "none" },
     "freischnitt": { padding: "34px 40px" },
   })[cutType] || { padding: "34px 40px" };
 
@@ -1768,7 +1774,8 @@ function Generator({ onAdd, toast }) {
                   gap: layerCount > 1 ? "0.1em" : 0, width: "100%" }}>
                   {textLines.slice(0, layerCount).map((line, i) => (
                     <LayerLine key={i} line={line} font={font} fontPx={fontPx}
-                      fillCss={fillCss} isLight={isLight} />
+                      fillCss={fillCss} isLight={isLight}
+                      strokeCss={cutType === "kontur" ? bgCss : undefined} />
                   ))}
                 </div>
               </div>
